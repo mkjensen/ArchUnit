@@ -126,6 +126,12 @@ public class GeneralCodingRulesTest {
         @SuppressWarnings("DeprecatedIsStillUsed")
         class ClassWithDeprecatedMembers {
             @Deprecated
+            static final int CONSTANT = 42;
+
+            @Deprecated
+            final int finalTarget = 0;
+
+            @Deprecated
             int target;
 
             @Deprecated
@@ -148,7 +154,9 @@ public class GeneralCodingRulesTest {
         class Origin {
             @DeprecatedAnnotation
             void origin() {
+                int gettingConstant = ClassWithDeprecatedMembers.CONSTANT;
                 ClassWithDeprecatedMembers instanceOfClassWithDeprecatedMembers = new ClassWithDeprecatedMembers();
+                int gettingFinalField = instanceOfClassWithDeprecatedMembers.finalTarget;
                 instanceOfClassWithDeprecatedMembers.target++;
                 instanceOfClassWithDeprecatedMembers.target();
                 DeprecatedClass instanceOfDeprecatedClass = new DeprecatedClass();
@@ -163,8 +171,10 @@ public class GeneralCodingRulesTest {
         assertThatRule(DEPRECATED_API_SHOULD_NOT_BE_USED)
                 .hasDescriptionContaining("no classes should access @Deprecated members or should depend on @Deprecated classes, because there should be a better alternative")
                 .checking(new ClassFileImporter().importClasses(Origin.class, ClassWithDeprecatedMembers.class, DeprecatedClass.class))
-                .hasNumberOfViolations(10)
+                .hasNumberOfViolations(12)
+                .hasViolationContaining("%s gets field <%s.CONSTANT>", violatingMethod, ClassWithDeprecatedMembers.class.getName())
                 .hasViolationContaining("%s calls constructor <%s.%s>", violatingMethod, ClassWithDeprecatedMembers.class.getName(), innerClassConstructor)
+                .hasViolationContaining("%s gets field <%s.finalTarget>", violatingMethod, ClassWithDeprecatedMembers.class.getName())
                 .hasViolationContaining("%s gets field <%s.target>", violatingMethod, ClassWithDeprecatedMembers.class.getName())
                 .hasViolationContaining("%s sets field <%s.target>", violatingMethod, ClassWithDeprecatedMembers.class.getName())
                 .hasViolationContaining("%s calls method <%s.target()>", violatingMethod, ClassWithDeprecatedMembers.class.getName())
